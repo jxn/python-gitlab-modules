@@ -1,0 +1,14 @@
+galaxy_info:
+  author: jxn (Jackson Murtha)
+  description: a collection of modules for using gitlab with the python-gitlab library
+  license: Apache
+
+  min_ansible_version: 2.4
+
+  galaxy_tags:
+    - gitlab
+    - git
+    - scm
+    - modules
+
+dependencies: []
