@@ -11,4 +11,9 @@ galaxy_info:
     - scm
     - modules
 
+  platforms:
+    - name: Ubuntu
+      versions:
+        - xenial
+
 dependencies: []
