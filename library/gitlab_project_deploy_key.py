@@ -72,6 +72,11 @@ options:
         required: false
         default: "present"
         choices: ["present", "absent"]
+    can_push:
+        description:
+            - Enable push permissions for the deploy key
+        required: false
+        default: false
 
 '''
 
@@ -93,7 +98,7 @@ EXAMPLES = '''
     project: my_group/my_project
     server_url: http://gitlab.yourdomain.com
     state: present
-    validate_certs: false
+    can_push: true
 '''
 
 RETURN = '''# '''
@@ -115,12 +120,15 @@ class GitLabDeployKey(object):
         self.projectObject = None
         self.deployKeyObject = None
 
-    def enableProjectDeployKey(self):
+    def enableProjectDeployKey(self, key_can_push):
         """Enable deploy key for project"""
         project = self.projectObject
 
         try:
             project.keys.enable(self.deployKeyObject.id)
+            self.deployKeyObject.can_push = key_can_push
+            # Update will work when This is released: https://github.com/python-gitlab/python-gitlab/commit/9a30266d197c45b00bafd4cea2aa4ca30637046b
+            self.deployKeyObject.save()
         except Exception:
             e = get_exception()
             self._module.fail_json(msg="Failed to enable deploy key: %s " % e)
@@ -131,7 +139,7 @@ class GitLabDeployKey(object):
         if len(deploy_keys) >= 1:
             for key in deploy_keys:
                 if (key.title == key_name):
-                    self.deployKeyObject = key
+                    self.deployKeyObject = self.projectObject.keys.get(key.id)
                     return True
         return False
 
@@ -155,6 +163,7 @@ def main():
             project=dict(required=True),
             name=dict(required=True),
             state=dict(default="present", choices=["present", 'absent']),
+            can_push=dict(default=False, required=False, type='bool'),
         ),
         supports_check_mode=True
     )
@@ -174,6 +183,7 @@ def main():
     use_credentials = None
     use_token = None
     use_config = None
+    can_push = module.params['can_push']
 
     # Validate some credentials configuration parameters.
     if login_user is not None and login_password is not None:
@@ -213,7 +223,7 @@ def main():
     if not deploy_key_exists:
         module.fail_json(msg="The deploy key with this name does not exist. This deploy key cannot be enabled.")
 
-    (rc, out) = deploy_key.enableProjectDeployKey()
+    (rc, out) = deploy_key.enableProjectDeployKey(key_can_push=can_push)
 
     module.exit_json(msg="success", result=out)
 
