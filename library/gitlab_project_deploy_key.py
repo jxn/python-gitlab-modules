@@ -126,9 +126,10 @@ class GitLabDeployKey(object):
 
         try:
             project.keys.enable(self.deployKeyObject.id)
-            self.deployKeyObject.can_push = key_can_push
+            deployKey = self.projectObject.keys.get(self.deployKeyObject.id)
+            deployKey.can_push = key_can_push
             # Update will work when This is released: https://github.com/python-gitlab/python-gitlab/commit/9a30266d197c45b00bafd4cea2aa4ca30637046b
-            self.deployKeyObject.save()
+            deployKey.save()
         except Exception:
             e = get_exception()
             self._module.fail_json(msg="Failed to enable deploy key: %s " % e)
@@ -139,7 +140,7 @@ class GitLabDeployKey(object):
         if len(deploy_keys) >= 1:
             for key in deploy_keys:
                 if (key.title == key_name):
-                    self.deployKeyObject = self.projectObject.keys.get(key.id)
+                    self.deployKeyObject = key
                     return True
         return False
 
